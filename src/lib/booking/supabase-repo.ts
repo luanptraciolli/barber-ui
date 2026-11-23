@@ -84,6 +84,12 @@ export function supabaseRepo(db: SupabaseClient): BookingRepo {
       if (r.error) throw new Error(r.error.message)
       return r.count ?? 0
     },
+    async hasPhoneOverlap(phone, start, end) {
+      const r = await db.from('appointments').select('id', { count: 'exact', head: true })
+        .eq('customer_phone', phone).eq('status', 'confirmed').overlaps('period', toRange(start, end))
+      if (r.error) throw new Error(r.error.message)
+      return (r.count ?? 0) > 0
+    },
     async insertAppointment(a) {
       const r = await db.from('appointments').insert({
         barber_id: a.barberId, service_id: a.serviceId, customer_name: a.customerName,

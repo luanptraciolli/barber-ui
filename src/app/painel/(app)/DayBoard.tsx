@@ -190,7 +190,11 @@ function NewBookingDialog({ date, barbers, services, onClose }: { date: string; 
   const load = (sId: string, bId: string) => {
     setSlot('')
     setSlots(null)
-    start(async () => setSlots(await panelSlots(sId, bId, date)))
+    start(async () => {
+      const r = await panelSlots(sId, bId, date)
+      if (r === null) setError('Não foi possível carregar os horários. Tente de novo.')
+      setSlots(r ?? [])
+    })
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => load(serviceId, barberId), [])

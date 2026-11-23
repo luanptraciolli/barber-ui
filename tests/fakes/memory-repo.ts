@@ -41,6 +41,12 @@ export class MemoryRepo implements BookingRepo {
     ).length
   }
 
+  async hasPhoneOverlap(phone: string, start: Date, end: Date) {
+    return this.appointments.some(
+      (a) => a.customerPhone === phone && a.status === 'confirmed' && a.start < end && start < a.end,
+    )
+  }
+
   async insertAppointment(a: NewAppointment) {
     const clash = this.appointments.some(
       (x) => x.barberId === a.barberId && x.status === 'confirmed' && x.start < a.end && a.start < x.end,

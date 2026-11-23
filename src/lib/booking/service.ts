@@ -6,6 +6,9 @@ import type { BookingError, BookingRepo, BookingResult, DayData, Service, SlotOp
 export { BOOKING_ERRORS } from './errors'
 
 const MAX_FUTURE_PER_PHONE = 3
+const STEP_MIN = 15
+/** Painel: permite marcar o horário que começou há menos de um intervalo (cliente chegou na hora). */
+const MANUAL_MIN_ADVANCE = -STEP_MIN + 1
 
 function inWindow(date: string, now: Date, windowDays: number): boolean {
   const today = todayInTz(now)
@@ -51,13 +54,11 @@ export async function getAvailableSlots(
   const { settings, service, ids } = await loadContext(repo, a.serviceId, a.barberId)
   if (!service || ids.length === 0 || !inWindow(a.date, a.now, settings.bookingWindowDays)) return []
   const day = await repo.loadDay(a.date, ids)
-  const per = slotsPerBarber(service, a.date, ids, day, a.now, a.ignoreAdvance ? 0 : settings.minAdvanceMin)
+  const per = slotsPerBarber(service, a.date, ids, day, a.now, a.ignoreAdvance ? MANUAL_MIN_ADVANCE : settings.minAdvanceMin)
   return mergeAnySlots(per).map((d) => ({ start: d.toISOString(), label: formatTime(d) }))
 }
 
-export async function createBooking(
-  repo: BookingRepo,
-  a: {
+type BookingInput = {
     serviceId: string
     barberId: string | 'any'
     start: string
@@ -65,8 +66,32 @@ export async function createBooking(
     customerPhone: string
     now: Date
     source: 'online' | 'manual'
-  },
-): Promise<BookingResult> {
+}
+
+/** Cria o agendamento. Nunca lança: falha de infraestrutura vira `UNAVAILABLE`. */
+export async function createBooking(repo: BookingRepo, a: BookingInput): Promise<BookingResult> {
+  try {
+    return await bookOrThrow(repo, a)
+  } catch (e) {
+    console.error('createBooking falhou', e)
+    return { ok: false, error: 'UNAVAILABLE' }
+  }
+}
+
+/** Como getAvailableSlots, mas retorna null se o banco falhar (para a tela mostrar "tente de novo"). */
+export async function tryGetAvailableSlots(
+  repo: BookingRepo,
+  a: Parameters<typeof getAvailableSlots>[1],
+): Promise<SlotOption[] | null> {
+  try {
+    return await getAvailableSlots(repo, a)
+  } catch (e) {
+    console.error('getAvailableSlots falhou', e)
+    return null
+  }
+}
+
+async function bookOrThrow(repo: BookingRepo, a: BookingInput): Promise<BookingResult> {
   const fail = (error: BookingError): BookingResult => ({ ok: false, error })
   const name = a.customerName.trim()
   if (name.length < 2) return fail('INVALID_NAME')
@@ -85,7 +110,7 @@ export async function createBooking(
   }
 
   const day = await repo.loadDay(date, ids)
-  const minAdvance = a.source === 'manual' ? 0 : settings.minAdvanceMin
+  const minAdvance = a.source === 'manual' ? MANUAL_MIN_ADVANCE : settings.minAdvanceMin
   const per = slotsPerBarber(service, date, ids, day, a.now, minAdvance)
   const candidates = ids.filter((id) => per[id].some((d) => d.getTime() === start.getTime()))
 
@@ -99,6 +124,7 @@ export async function createBooking(
   }
 
   const end = new Date(start.getTime() + service.durationMin * 60_000)
+  if (await repo.hasPhoneOverlap(phone, start, end)) return fail('ALREADY_BOOKED')
   for (const barberId of ordered) {
     const r = await repo.insertAppointment({
       barberId, serviceId: service.id, customerName: name, customerPhone: phone, start, end, source: a.source,

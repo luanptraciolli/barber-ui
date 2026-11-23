@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createBooking, getAvailableSlots } from '@/lib/booking/service'
+import { createBooking, tryGetAvailableSlots } from '@/lib/booking/service'
 import { requireStaff } from '@/lib/booking/staff'
 import { supabaseRepo } from '@/lib/booking/supabase-repo'
 import type { BookingResult, SlotOption } from '@/lib/booking/types'
@@ -17,9 +17,9 @@ export async function cancelAppointment(id: string): Promise<{ ok: boolean }> {
   return { ok: !r.error }
 }
 
-export async function panelSlots(serviceId: string, barberId: string, date: string): Promise<SlotOption[]> {
+export async function panelSlots(serviceId: string, barberId: string, date: string): Promise<SlotOption[] | null> {
   const { db } = await requireStaff()
-  return getAvailableSlots(supabaseRepo(db), {
+  return tryGetAvailableSlots(supabaseRepo(db), {
     serviceId: s(serviceId), barberId: s(barberId), date: s(date, 10), now: new Date(), ignoreAdvance: true,
   })
 }

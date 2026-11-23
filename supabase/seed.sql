@@ -1,5 +1,6 @@
--- Demo "Barbearia Exemplo". Idempotente: limpa os dados de demo e recria.
--- Agendamentos são relativos a now(), para a agenda parecer viva em qualquer dia.
+-- ATENÇÃO: APAGA TODOS OS DADOS (agendamentos, serviços, barbeiros, configurações).
+-- Use só na demonstração, NUNCA depois que a barbearia tiver agendamentos reais.
+-- Demo "Barbearia Exemplo". Agendamentos são relativos a now(), para a agenda parecer viva em qualquer dia.
 delete from public.appointments;
 delete from public.time_blocks;
 delete from public.working_hours;

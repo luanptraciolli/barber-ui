@@ -36,12 +36,16 @@ export interface BookingRepo {
   listBarbers(): Promise<Barber[]>
   loadDay(date: string, barberIds: string[]): Promise<DayData>
   countFutureByPhone(phone: string, now: Date): Promise<number>
+  /** Há agendamento confirmado deste telefone que se sobrepõe a [start, end)? */
+  hasPhoneOverlap(phone: string, start: Date, end: Date): Promise<boolean>
   insertAppointment(a: NewAppointment): Promise<{ ok: true; id: string } | { ok: false; reason: 'conflict' }>
 }
 
 export type SlotOption = { start: string; label: string }
 
-export type BookingError = 'SLOT_TAKEN' | 'INVALID_PHONE' | 'INVALID_NAME' | 'TOO_MANY' | 'OUT_OF_RANGE' | 'NOT_FOUND'
+export type BookingError =
+  | 'SLOT_TAKEN' | 'INVALID_PHONE' | 'INVALID_NAME' | 'TOO_MANY' | 'OUT_OF_RANGE' | 'NOT_FOUND'
+  | 'ALREADY_BOOKED' | 'UNAVAILABLE'
 export type BookingResult =
   | { ok: true; appointmentId: string; barberName: string; start: string }
   | { ok: false; error: BookingError }

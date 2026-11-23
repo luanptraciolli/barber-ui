@@ -29,6 +29,7 @@ export function BookingWizard({ catalog, today }: { catalog: Catalog; today: str
   const barber = barbers.find((b) => b.id === barberId)
 
   const [slots, setSlots] = useState<SlotOption[] | null>(null)
+  const [slotsFailed, setSlotsFailed] = useState(false)
   const [loadingSlots, startSlots] = useTransition()
   const [submitting, startSubmit] = useTransition()
   const [name, setName] = useState('')
@@ -60,7 +61,10 @@ export function BookingWizard({ catalog, today }: { catalog: Catalog; today: str
   const loadSlots = (d: string) =>
     startSlots(async () => {
       setSlots(null)
-      setSlots(await fetchSlots(serviceId, barberId, d))
+      setSlotsFailed(false)
+      const r = await fetchSlots(serviceId, barberId, d)
+      if (r === null) setSlotsFailed(true)
+      else setSlots(r)
     })
 
   useEffect(() => {
@@ -179,7 +183,15 @@ export function BookingWizard({ catalog, today }: { catalog: Catalog; today: str
 
           {activeDate && <p className="mt-6 mb-3 text-sage first-letter:uppercase">{formatLongDate(activeDate)}</p>}
 
-          {loadingSlots || slots === null ? (
+          {slotsFailed && !loadingSlots ? (
+            <div className="py-8">
+              <p className="text-bone">Não foi possível carregar os horários.</p>
+              <button type="button" onClick={() => loadSlots(activeDate)}
+                className="mt-3 rounded-md border border-brass px-4 py-2.5 text-brass hover:bg-brass hover:text-green-deep">
+                Tentar de novo
+              </button>
+            </div>
+          ) : loadingSlots || slots === null ? (
             <p className="py-8 text-sage">Buscando horários livres…</p>
           ) : slots.length === 0 ? (
             <p className="py-8 text-sage">Nenhum horário livre neste dia. Escolha outro dia acima.</p>

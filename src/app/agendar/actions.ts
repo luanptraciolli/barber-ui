@@ -1,6 +1,6 @@
 'use server'
 
-import { createBooking, getAvailableSlots } from '@/lib/booking/service'
+import { createBooking, tryGetAvailableSlots } from '@/lib/booking/service'
 import { supabaseRepo } from '@/lib/booking/supabase-repo'
 import type { BookingResult, SlotOption } from '@/lib/booking/types'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -8,9 +8,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.slice(0, max) : '')
 const isDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d)
 
-export async function fetchSlots(serviceId: string, barberId: string, date: string): Promise<SlotOption[]> {
+/** null = falha ao consultar (a tela oferece tentar de novo). */
+export async function fetchSlots(serviceId: string, barberId: string, date: string): Promise<SlotOption[] | null> {
   if (!isDate(str(date))) return []
-  return getAvailableSlots(supabaseRepo(createAdminClient()), {
+  return tryGetAvailableSlots(supabaseRepo(createAdminClient()), {
     serviceId: str(serviceId), barberId: str(barberId), date, now: new Date(),
   })
 }

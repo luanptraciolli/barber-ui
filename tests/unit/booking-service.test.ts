@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createBooking, getAvailableSlots } from '@/lib/booking/service'
+import { createBooking, getAvailableSlots, tryGetAvailableSlots } from '@/lib/booking/service'
 import { atTime } from '@/lib/time'
 import { MemoryRepo } from '../fakes/memory-repo'
 
@@ -90,5 +90,26 @@ describe('createBooking', () => {
     const now = atTime(DAY, '09:50')
     expect(await book({ now, start: atTime(DAY, '10:00').toISOString() })).toEqual({ ok: false, error: 'SLOT_TAKEN' })
     expect((await book({ now, start: atTime(DAY, '10:00').toISOString(), source: 'manual' })).ok).toBe(true)
+  })
+})
+
+describe('correções da revisão final', () => {
+  it('falha do banco vira UNAVAILABLE em vez de exceção', async () => {
+    repo.loadDay = async () => { throw new Error('timeout') }
+    expect(await book()).toEqual({ ok: false, error: 'UNAVAILABLE' })
+  })
+  it('tryGetAvailableSlots retorna null quando o banco falha', async () => {
+    repo.getSettings = async () => { throw new Error('timeout') }
+    expect(await tryGetAvailableSlots(repo, { serviceId: 'corte', barberId: 'a', date: DAY, now: NOW })).toBeNull()
+  })
+  it('manual permite marcar o horário que começou há poucos minutos (cliente chegou na hora)', async () => {
+    const now = atTime(DAY, '10:07')
+    expect((await book({ now, start: atTime(DAY, '10:00').toISOString(), source: 'manual' })).ok).toBe(true)
+    expect(await book({ now, start: atTime(DAY, '09:45').toISOString(), source: 'manual', customerPhone: '11922222222' }))
+      .toEqual({ ok: false, error: 'SLOT_TAKEN' })
+  })
+  it('mesmo telefone não ocupa dois barbeiros no mesmo horário', async () => {
+    expect((await book({ barberId: 'any' })).ok).toBe(true)
+    expect(await book({ barberId: 'any' })).toEqual({ ok: false, error: 'ALREADY_BOOKED' })
   })
 })

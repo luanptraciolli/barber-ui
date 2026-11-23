@@ -7,4 +7,6 @@ export const BOOKING_ERRORS: Record<BookingError, string> = {
   INVALID_NAME: 'Informe seu nome.',
   OUT_OF_RANGE: 'Data fora do período de agendamento.',
   NOT_FOUND: 'Serviço indisponível.',
+  ALREADY_BOOKED: 'Você já tem um horário marcado nesse período.',
+  UNAVAILABLE: 'Não foi possível agendar agora. Tente de novo em instantes.',
 }
