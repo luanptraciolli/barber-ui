@@ -30,3 +30,13 @@ export function addDaysToDate(date: string, days: number): string {
 export function formatTime(d: Date | string): string {
   return format(new TZDate(new Date(d), TZ), 'HH:mm')
 }
+
+export function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+
+/** Minutos desde a meia-noite (em SP) do instante dado. */
+export function minutesInTz(d: Date | string): number {
+  return toMinutes(formatTime(d))
+}
