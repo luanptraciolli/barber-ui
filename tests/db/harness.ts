@@ -32,7 +32,7 @@ export async function withTestDb(fn: (client: pg.Client) => Promise<void>) {
   try {
     await client.query(SUPABASE_STUB)
     const dir = path.resolve(__dirname, '../../supabase/migrations')
-    for (const f of ['0001_schema.sql']) await client.query(readFileSync(path.join(dir, f), 'utf8'))
+    for (const f of ['0001_schema.sql', '0002_hardening.sql']) await client.query(readFileSync(path.join(dir, f), 'utf8'))
     // Supabase concede privilégios de tabela a anon/authenticated por padrão; a RLS é quem restringe.
     await client.query(`grant usage on schema public to anon, authenticated;
       grant all on all tables in schema public to anon, authenticated;

@@ -73,3 +73,15 @@ describe('RLS', () => {
       expect((await c.query('select * from appointments')).rowCount).toBe(0)
     }))
 })
+
+describe('hardening', () => {
+  it('is_staff não fica exposta em public e a constraint continua valendo', () =>
+    withTestDb(async (c) => {
+      const r = await c.query(`select count(*)::int n from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where p.proname = 'is_staff' and n.nspname = 'public'`)
+      expect(r.rows[0].n).toBe(0)
+      const { a, s } = await seed(c)
+      await appt(c, a, s, R('10:00', '10:30'))
+      await expect(appt(c, a, s, R('10:15', '10:45'))).rejects.toMatchObject({ code: '23P01' })
+    }))
+})

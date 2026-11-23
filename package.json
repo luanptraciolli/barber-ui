@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_USE_ENV_PROXY=1 next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_USE_ENV_PROXY=1 next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke": "NODE_USE_ENV_PROXY=1 tsx --env-file=.env.local scripts/smoke-repo.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
