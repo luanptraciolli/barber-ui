@@ -183,7 +183,9 @@ export function BookingWizard({ catalog, today }: { catalog: Catalog; today: str
 
           {activeDate && <p className="mt-6 mb-3 text-sage first-letter:uppercase">{formatLongDate(activeDate)}</p>}
 
-          {slotsFailed && !loadingSlots ? (
+          {!activeDate ? (
+            <p className="py-8 text-sage">Nenhum dia disponível para agendamento. Fale com a barbearia pelo WhatsApp.</p>
+          ) : slotsFailed && !loadingSlots ? (
             <div className="py-8">
               <p className="text-bone">Não foi possível carregar os horários.</p>
               <button type="button" onClick={() => loadSlots(activeDate)}

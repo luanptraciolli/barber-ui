@@ -6,16 +6,7 @@ import { addDaysToDate, todayInTz } from '../src/lib/time'
 
 async function main() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
-    auth: { persistSession: false },
-    global: {
-      fetch: (input, init) => {
-        const h = new Headers(init?.headers)
-        if (h.get('Authorization') === `Bearer ${key}`) h.delete('Authorization')
-        return fetch(input, { ...init, headers: h })
-      },
-    },
-  })
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, { auth: { persistSession: false } })
   const repo = supabaseRepo(db)
   const barbers = await repo.listBarbers()
   console.log('barbeiros:', barbers.map((b) => b.name).join(', '))

@@ -8,16 +8,7 @@ async function main() {
   const [email, role] = process.argv.slice(2)
   if (!email || !['owner', 'admin'].includes(role)) throw new Error('uso: <email> <owner|admin>')
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
-    auth: { persistSession: false },
-    global: {
-      fetch: (input, init) => {
-        const h = new Headers(init?.headers)
-        if (h.get('Authorization') === `Bearer ${key}`) h.delete('Authorization')
-        return fetch(input, { ...init, headers: h })
-      },
-    },
-  })
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, { auth: { persistSession: false } })
   const password = randomBytes(9).toString('base64url')
   const list = await db.auth.admin.listUsers()
   if (list.error) throw list.error

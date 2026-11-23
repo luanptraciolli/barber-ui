@@ -1,12 +1,13 @@
 // Verificação ponta a ponta do agendamento (servidor em :3000): node scripts/e2e-booking.cjs <pasta-screenshots>
 const { chromium } = require('playwright')
 const out = process.argv[2]
+const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
 ;(async () => {
   const browser = await chromium.launch()
   const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 1 })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => console.log('PAGEERROR', e.message))
-  await page.goto('http://localhost:3000/')
+  await page.goto(BASE + '/')
   await page.screenshot({ path: `${out}/0-home.png`, fullPage: true })
   await page.getByRole('link', { name: 'Agendar horário' }).click()
   await page.getByRole('button', { name: /Corte\s*30 min/ }).first().click()
