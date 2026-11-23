@@ -1,16 +1,9 @@
 import { computeSlots, mergeAnySlots, pickBarber } from '../availability'
 import { normalizePhone } from '../phone'
-import { addDaysToDate, formatTime, todayInTz } from '../time'
+import { addDaysToDate, dateInTz, formatTime, todayInTz } from '../time'
 import type { BookingError, BookingRepo, BookingResult, DayData, Service, SlotOption } from './types'
 
-export const BOOKING_ERRORS: Record<BookingError, string> = {
-  SLOT_TAKEN: 'Esse horário acabou de ser reservado, escolha outro.',
-  TOO_MANY: 'Você já tem 3 horários marcados. Fale com a barbearia pelo WhatsApp.',
-  INVALID_PHONE: 'Informe um telefone com DDD.',
-  INVALID_NAME: 'Informe seu nome.',
-  OUT_OF_RANGE: 'Data fora do período de agendamento.',
-  NOT_FOUND: 'Serviço indisponível.',
-}
+export { BOOKING_ERRORS } from './errors'
 
 const MAX_FUTURE_PER_PHONE = 3
 
@@ -41,7 +34,7 @@ function slotsPerBarber(
   return out
 }
 
-async function loadContext(repo: BookingRepo, serviceId: string, barberId: string | 'any', date: string) {
+async function loadContext(repo: BookingRepo, serviceId: string, barberId: string | 'any') {
   const [settings, service, barbers] = await Promise.all([
     repo.getSettings(),
     repo.getService(serviceId),
@@ -55,7 +48,7 @@ export async function getAvailableSlots(
   repo: BookingRepo,
   a: { serviceId: string; barberId: string | 'any'; date: string; now: Date; ignoreAdvance?: boolean },
 ): Promise<SlotOption[]> {
-  const { settings, service, ids } = await loadContext(repo, a.serviceId, a.barberId, a.date)
+  const { settings, service, ids } = await loadContext(repo, a.serviceId, a.barberId)
   if (!service || ids.length === 0 || !inWindow(a.date, a.now, settings.bookingWindowDays)) return []
   const day = await repo.loadDay(a.date, ids)
   const per = slotsPerBarber(service, a.date, ids, day, a.now, a.ignoreAdvance ? 0 : settings.minAdvanceMin)
@@ -82,9 +75,9 @@ export async function createBooking(
 
   const start = new Date(a.start)
   if (Number.isNaN(start.getTime())) return fail('SLOT_TAKEN')
-  const date = todayInTz(start)
+  const date = dateInTz(start)
 
-  const { settings, service, barbers, ids } = await loadContext(repo, a.serviceId, a.barberId, date)
+  const { settings, service, barbers, ids } = await loadContext(repo, a.serviceId, a.barberId)
   if (!service) return fail('NOT_FOUND')
   if (!inWindow(date, a.now, settings.bookingWindowDays)) return fail('OUT_OF_RANGE')
   if (a.source === 'online' && (await repo.countFutureByPhone(phone, a.now)) >= MAX_FUTURE_PER_PHONE) {

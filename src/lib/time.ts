@@ -15,10 +15,13 @@ export function weekdayOf(date: string): number {
   return new TZDate(atTime(date, '12:00'), TZ).getDay()
 }
 
-/** Data de hoje (YYYY-MM-DD) em SP. */
-export function todayInTz(now: Date): string {
-  return format(new TZDate(now, TZ), 'yyyy-MM-dd')
+/** Data (YYYY-MM-DD) do instante `d` no fuso de SP. */
+export function dateInTz(d: Date): string {
+  return format(new TZDate(d, TZ), 'yyyy-MM-dd')
 }
+
+/** Data de hoje (YYYY-MM-DD) em SP. */
+export const todayInTz = (now: Date): string => dateInTz(now)
 
 export function addDaysToDate(date: string, days: number): string {
   return format(addDays(new TZDate(atTime(date, '12:00'), TZ), days), 'yyyy-MM-dd')

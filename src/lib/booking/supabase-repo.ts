@@ -58,7 +58,11 @@ export function supabaseRepo(db: SupabaseClient): BookingRepo {
           .lt('starts_at', atTime(addDaysToDate(date, 1), '00:00').toISOString())
           .gt('ends_at', atTime(date, '00:00').toISOString()),
       ])
-      for (const id of barberIds) out.workingHours[id] = [], out.busy[id] = [], out.countsToday[id] = 0
+      for (const id of barberIds) {
+        out.workingHours[id] = []
+        out.busy[id] = []
+        out.countsToday[id] = 0
+      }
       for (const w of must(wh) as { barber_id: string; weekday: number; start_time: string; end_time: string }[]) {
         const h: WorkingHour = { weekday: w.weekday, start: w.start_time.slice(0, 5), end: w.end_time.slice(0, 5) }
         out.workingHours[w.barber_id].push(h)
